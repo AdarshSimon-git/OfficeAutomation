@@ -29,6 +29,15 @@ If you reject, nothing changes.
 You can't edit a request after submitting it. If something needs to
 change, ask Finance to set it to **Cancelled**, then submit a new one.
 
+## CEO, Finance and Inventory: the Teams channel
+
+Every request gets its own thread in the **Purchase Requests** channel in
+Teams. The CEO is @mentioned on each new request. Discuss the request by
+replying in its thread. Approvals, orders, delays and deliveries are posted
+there automatically, so the thread shows the full story. **Approving still
+happens with the Approve/Reject buttons** (Teams Approvals app or email), not
+by replying in the channel. Search the channel for `#42` to find request 42.
+
 ## CEO: approving requests
 
 * Each new request arrives as an **approval email** in Outlook with

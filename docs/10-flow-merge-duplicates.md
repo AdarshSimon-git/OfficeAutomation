@@ -229,6 +229,11 @@ Merge Approval* with the same two actions, *Configure run after* → **has
 timed out / has failed**. In the email, say that the requester(s) didn't
 respond within 7 days.
 
+## Teams thread
+
+Post the merge proposal and outcome into both requests' threads. See
+[12 – Teams channel](12-teams-channel.md#pr-06-merge-duplicate-requests-10).
+
 ## Other flows updated for merges
 
 * **Status `Merged`** isn't in any reminder filter, so merged duplicates

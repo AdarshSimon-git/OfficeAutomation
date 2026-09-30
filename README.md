@@ -13,7 +13,9 @@ licences are needed.
 2. **The CEO gets an approval request** in Outlook (actionable email), Teams
    (Approvals app) and the Power Automate mobile app, and can approve or
    reject with comments. Optionally, it shows the project's budget,
-   committed spend and remaining budget.
+   committed spend and remaining budget. Each request also gets its **own
+   thread in a shared Teams channel** (CEO, Finance, Inventory), where
+   people can discuss it and every later update is posted as a reply.
 3. **Approved requests go to Finance** by email (and optionally a Teams
    channel post). Rejections go back to the requester with the CEO's comments.
 4. **Finance prepares orders**:
@@ -75,6 +77,7 @@ flowchart LR
 | Flow **PR-06 Merge Duplicate Requests** | Finance sets *Merge Into Request #*; the requester(s) approve; quantities combine and the duplicate is closed | [10](docs/10-flow-merge-duplicates.md) |
 | Flow **PR-07 Order all from this supplier** | Run from the list's *Automate* menu: batch-orders every approved request for a supplier | [11](docs/11-flow-supplier-batch-order.md) |
 | **Projects** & **Suppliers** lists | Lookup lists for linking requests to projects (with budgets) and to suppliers | [09](docs/09-projects.md), [11](docs/11-flow-supplier-batch-order.md) |
+| Teams **Purchase Requests** channel | One thread per request: the CEO is @mentioned, discussion happens in the thread, and every status change is posted as a reply | [12](docs/12-teams-channel.md) |
 | User guide | Submitting, approving, ordering, tracking and receiving | [07 – User guide](docs/07-user-guide.md) |
 | Testing & operations | Test plan, monitoring, troubleshooting | [08 – Testing & operations](docs/08-testing-and-operations.md) |
 | `scripts/Deploy-PurchaseRequestList.ps1` | Creates the list, columns, views, permission level and groups in one go | [01](docs/01-sharepoint-setup.md) |
@@ -109,17 +112,20 @@ original expected date is kept, so you can report on how late vendors are.
    [08 – Testing & operations](docs/08-testing-and-operations.md#ownership).
 2. **Create the list:** run `scripts/Deploy-PurchaseRequestList.ps1`, or
    follow the manual steps in [docs/01](docs/01-sharepoint-setup.md).
-3. **Build the flows** in [Power Automate](https://make.powerautomate.com):
+3. **Create the Teams channel** *Purchase Requests* in a team with the CEO,
+   Finance and Inventory ([12](docs/12-teams-channel.md)).
+4. **Build the flows** in [Power Automate](https://make.powerautomate.com):
    PR-01 to PR-05 following docs [02](docs/02-flow-ceo-approval.md) to
    [06](docs/06-flow-delivery-tracking.md), then PR-06 and PR-07 from
    [10](docs/10-flow-merge-duplicates.md) and
    [11](docs/11-flow-supplier-batch-order.md), and optionally the budget
-   check from [09](docs/09-projects.md). Each guide lists every action,
+   check from [09](docs/09-projects.md). Add the Teams thread steps from
+   [12](docs/12-teams-channel.md) as you go. Each guide lists every action,
    setting and expression to paste in.
-4. **Add your projects and suppliers** to the *Projects* and *Suppliers*
+5. **Add your projects and suppliers** to the *Projects* and *Suppliers*
    lists.
-5. **Test** with the checklist in [docs/08](docs/08-testing-and-operations.md).
-6. **Roll out:** share the list link, add Teams tabs (*Pending Purchase* for
+6. **Test** with the checklist in [docs/08](docs/08-testing-and-operations.md).
+7. **Roll out:** share the list link, add Teams tabs (*Pending Purchase* for
    Finance, *Awaiting Delivery* for Inventory), and send staff the
    [user guide](docs/07-user-guide.md).
 

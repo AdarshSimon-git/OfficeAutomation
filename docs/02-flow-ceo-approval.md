@@ -8,10 +8,11 @@ the requester is told the outcome either way.
 When an item is created
 ├─ Initialize variable  CEOEmail
 ├─ Initialize variable  FinanceEmail
+├─ Teams: @mention CEO + Post Request Thread       (see doc 12)
 ├─ Update item          Mark Pending Approval
 ├─ Start and wait for an approval   CEO Approval        (timeout 28 days)
 ├─ Condition            Approved?                        (runs if CEO Approval succeeded)
-│   ├─ Yes: Update item (Approved) → Email Finance → [Teams post] → Email requester
+│   ├─ Yes: Update item (Approved) → Email Finance → Email requester → [Teams reply]
 │   └─ No:  Update item (Rejected) → Email requester
 └─ Update item          Mark Expired → Email requester   (runs if CEO Approval timed out/failed)
 ```
@@ -144,9 +145,10 @@ open the request, click <b>Edit</b> and set <b>Status = Purchased</b> (add the P
 <p>You'll get a daily reminder until it's marked as Purchased.</p>
 ```
 
-**6c. (Optional) Microsoft Teams *Post message in a chat or channel*.**
-Post as *Flow bot* to the *Finance* team's channel, with a short message
-and the `{Link}`.
+**6c. Teams thread.** Each request is posted to the *Purchase Requests*
+Teams channel, and the decision is posted as a reply. The steps (posting
+the thread before *Mark Pending Approval*, and a reply at the end of each
+branch) are in [12 – Teams channel](12-teams-channel.md#pr-01-submit--ceo-approval-02).
 
 **6d. Send an email (V2) – "Email Requester Approved"**
 

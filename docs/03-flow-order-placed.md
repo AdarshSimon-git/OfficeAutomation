@@ -115,6 +115,9 @@ For several requests from the same supplier, Finance can mark them all
 *Purchased* in one go with PR-07 ([11](11-flow-supplier-batch-order.md)).
 This flow then runs once per request.
 
+**Teams thread:** at the end, reply "🛒 Ordered…" in the request's thread. See
+[12 – Teams channel](12-teams-channel.md#pr-02-order-placed-03).
+
 ## Optional additions
 
 * **Require a PO number or expected date:** add a condition before step 3.

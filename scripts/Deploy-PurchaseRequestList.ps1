@@ -203,6 +203,8 @@ $fields = @(
     @{ Name = 'CompletionNotified'; Xml = '<Field Type="Boolean" Name="CompletionNotified" StaticName="CompletionNotified" DisplayName="Completion Notified" ShowInNewForm="FALSE" ShowInEditForm="FALSE"><Default>0</Default></Field>' }
     @{ Name = 'ReceivedNotified'; Xml = '<Field Type="Boolean" Name="ReceivedNotified" StaticName="ReceivedNotified" DisplayName="Received Notified" ShowInNewForm="FALSE" ShowInEditForm="FALSE"><Default>0</Default></Field>' }
     @{ Name = 'LastDelayNotice'; Xml = '<Field Type="Text" Name="LastDelayNotice" StaticName="LastDelayNotice" DisplayName="Last Delay Notice" MaxLength="100" ShowInNewForm="FALSE" ShowInEditForm="FALSE" />' }
+    # ID of the request's thread in the Purchase Requests Teams channel; later updates reply to it.
+    @{ Name = 'TeamsThreadId'; Xml = '<Field Type="Text" Name="TeamsThreadId" StaticName="TeamsThreadId" DisplayName="Teams Thread ID" MaxLength="100" ShowInNewForm="FALSE" ShowInEditForm="FALSE" />' }
 )
 
 Add-MissingFields $list $fields

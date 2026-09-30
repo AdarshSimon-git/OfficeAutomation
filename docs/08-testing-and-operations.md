@@ -43,6 +43,10 @@ switch to the real ones.
 | 15 | Set **Received** with Quantity Received less than Quantity | Requester gets *Arrived* with "(short delivery)"; Finance copied; *Received On/By* filled; *Received Notified* = Yes; PR-04 ran once |
 | 16 | Run PR-05 again | The received order is no longer listed |
 | 17 | Set a request **Cancelled** | It stops appearing in all reminders |
+| **Teams channel** | | |
+| 18a | Submit a request | A new thread appears in *Purchase Requests* with the details, and the CEO is @mentioned; *Teams Thread ID* is filled in on the item (visible in grid view if unhidden) |
+| 18b | Approve it, mark it Purchased, set Delayed, then Received | ✅, 🛒, ⏰ and 📦 replies appear **in the same thread**, in order |
+| 18c | Temporarily pick a channel the flow account can't post to, and submit | The approval still reaches the CEO; the thread ID is blank; no replies are attempted |
 | **Projects** | | |
 | 18 | Create project *PRJ-T Test* with Budget 1,000. Submit a request for it costing 800, get it approved, then submit another for 300 | The second approval shows committed 800, remaining −100 and ⚠️ Over budget (with the budget check) |
 | 19 | Set the project to *Closed* and submit another request for it | Approval shows ⚠️ Project is Closed |
@@ -87,6 +91,9 @@ switch to the real ones.
 | PR-06 or PR-07 *Get items* fails on `ProjectId` / `SupplierId` | Use `Project/Id eq …` / `Supplier/Id eq …` instead. The column's internal name must be exactly `Project` / `Supplier`. |
 | "Order all from this supplier" isn't in the Automate menu | The user isn't a run-only user of PR-07, or the browser cached the menu: refresh. The flow must use the *For a selected item* trigger on this list. |
 | Merge approval never arrives | PR-06's trigger condition is too strict: check *Merge State* is blank on the request (no default value on that column). |
+| Thread replies appear as new posts, or fail with "message not found" | The *Message ID* must be the root post's ID (`TeamsThreadId`), and the reply must use the **same Team and Channel** as the original post. |
+| Posts show as "Workflows" instead of "Flow bot" | Expected: Microsoft renamed the bot. |
+| CEO isn't notified in Teams | Check the *CEO Mention* token is in the message, and that the CEO is a member of the team. |
 | *Received By* isn't filled in | Check the claims expression in PR-04 (`i:0#.f|membership|` + email), and that the flow account can resolve users on the site. |
 | A request was set back from Purchased and purchased again, but no email | *Completion Notified* is still Yes: set it to No in grid view (or unhide it) before marking Purchased again. The same applies to *Received Notified* for Received. |
 | Approval expired | The CEO didn't respond within 28 days. Resubmit. Consider adding a delegate: use *Approve/Reject – First to respond* with the CEO and an EA/COO separated by `;`. |

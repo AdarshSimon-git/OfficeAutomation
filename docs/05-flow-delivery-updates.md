@@ -136,5 +136,6 @@ Save the flow.
   column and extend the trigger condition the same way as for *Received*.
 * **Partially Received:** add a case that emails Finance, since a short
   delivery may need a vendor follow-up or a partial invoice.
-* **Teams:** replace or supplement the emails with *Post message in a chat
-  or channel* to the requester (Chat with Flow bot).
+* **Teams thread:** at the end of each case, reply 📦 / ⏰ in the request's
+  thread in the *Purchase Requests* channel. See
+  [12 – Teams channel](12-teams-channel.md#pr-04-delivery-updates-05).
