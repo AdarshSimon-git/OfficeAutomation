@@ -96,7 +96,8 @@ concat(
   '<tr style="background:', if(greaterOrEquals(div(sub(ticks(utcNow()), ticks(coalesce(item()?['DecisionDate'], item()?['Created']))), 864000000000), variables('EscalateAfterDays')), '#fde7e9', '#ffffff'), '">',
   '<td><a href="', item()?['{Link}'], '">#', string(item()?['ID']), ' – ', item()?['Title'], '</a></td>',
   '<td>', coalesce(item()?['Author']?['DisplayName'], ''), '</td>',
-  '<td>', coalesce(item()?['Department']?['Value'], ''), '</td>',
+  '<td>', coalesce(item()?['Supplier']?['Value'], '<i style="color:#a4262c">not set</i>'), '</td>',
+  '<td>', coalesce(item()?['Project']?['Value'], '–'), '</td>',
   '<td style="text-align:right">', formatNumber(float(coalesce(item()?['EstimatedCost'], 0)), 'N2'), '</td>',
   '<td>', coalesce(item()?['Urgency']?['Value'], ''), '</td>',
   '<td>', if(empty(item()?['NeededBy']), '–', formatDateTime(coalesce(item()?['NeededBy'], utcNow()), 'dd MMM yyyy')), '</td>',
@@ -123,11 +124,12 @@ concat(
 <p>Hello Finance team,</p>
 <p>These purchase requests have been <b>approved by the CEO</b> and are waiting to be purchased.
 Rows highlighted in red have waited <b>@{variables('EscalateAfterDays')} days or more</b>.</p>
+<p>Tip: use the <b>Pending Purchase by Supplier</b> view and <b>Automate → Order all from this supplier</b> to order several items from one supplier at once.</p>
 <p>When a purchase is done, open the request → <b>Edit</b> → set <b>Status = Purchased</b> and fill in the
 PO / invoice number, actual cost and <b>expected delivery date</b>. It will then drop off this list and move to the inventory delivery tracker.</p>
 <table cellpadding="6" style="border-collapse:collapse;border:1px solid #ccc;font-family:Segoe UI,Arial,sans-serif;font-size:13px">
   <tr style="background:#f3f2f1;text-align:left">
-    <th>Request</th><th>Requester</th><th>Dept</th><th>Est. cost</th><th>Urgency</th>
+    <th>Request</th><th>Requester</th><th>Supplier</th><th>Project</th><th>Est. cost</th><th>Urgency</th>
     <th>Needed by</th><th>Approved</th><th>Days waiting</th><th>Reminders</th>
   </tr>
   @{join(body('Purchase_Rows'), '')}

@@ -6,8 +6,10 @@
 .DESCRIPTION
     Creates (or updates, the script is safe to re-run):
       * The "Purchase Requests" custom list with all columns the flows rely on
+      * "Projects" and "Suppliers" lists that requests link to (lookups)
       * Views: My Requests, Awaiting CEO Approval, Pending Purchase, Awaiting Delivery,
-        Overdue Deliveries, Received, All Requests
+        Overdue Deliveries, Received, By Project, Pending Purchase by Supplier,
+        All Requests
       * A "Submit Purchase Request" permission level (Read + Add Items)
       * A "Purchase Request Managers" SharePoint group (CEO + Finance + Inventory)
         with Edit rights
@@ -49,6 +51,10 @@ param(
 
     [string] $ListTitle = 'Purchase Requests',
     [string] $ListUrl = 'Lists/PurchaseRequests',
+    [string] $ProjectsListTitle = 'Projects',
+    [string] $ProjectsListUrl = 'Lists/Projects',
+    [string] $SuppliersListTitle = 'Suppliers',
+    [string] $SuppliersListUrl = 'Lists/Suppliers',
     [string] $ManagersGroupName = 'Purchase Request Managers',
     [string] $SubmitRoleName = 'Submit Purchase Request',
 
@@ -62,19 +68,64 @@ $ErrorActionPreference = 'Stop'
 Write-Host "Connecting to $SiteUrl ..." -ForegroundColor Cyan
 Connect-PnPOnline -Url $SiteUrl -ClientId $ClientId -Interactive
 
-# ---------------------------------------------------------------------------
-# 1. List
-# ---------------------------------------------------------------------------
-$list = Get-PnPList -Identity $ListUrl -ErrorAction SilentlyContinue
-if (-not $list) {
-    Write-Host "Creating list '$ListTitle' ..." -ForegroundColor Cyan
-    $list = New-PnPList -Title $ListTitle -Url $ListUrl -Template GenericList -EnableVersioning
-}
-else {
-    Write-Host "List '$ListTitle' already exists, updating ..." -ForegroundColor Yellow
+function Get-OrCreateList([string] $Title, [string] $Url) {
+    $l = Get-PnPList -Identity $Url -ErrorAction SilentlyContinue
+    if (-not $l) {
+        Write-Host "Creating list '$Title' ..." -ForegroundColor Cyan
+        $l = New-PnPList -Title $Title -Url $Url -Template GenericList -EnableVersioning
+    }
+    else {
+        Write-Host "List '$Title' already exists, updating ..." -ForegroundColor Yellow
+    }
+    Set-PnPList -Identity $l -EnableVersioning $true | Out-Null
+    return $l
 }
 
-Set-PnPList -Identity $list -EnableVersioning $true -EnableAttachments $true | Out-Null
+function Add-MissingFields($TargetList, [array] $Definitions) {
+    foreach ($f in $Definitions) {
+        if (Get-PnPField -List $TargetList -Identity $f.Name -ErrorAction SilentlyContinue) {
+            Write-Host "  Column '$($f.Name)' exists, skipping" -ForegroundColor DarkGray
+            continue
+        }
+        Write-Host "  Adding column '$($f.Name)'" -ForegroundColor Green
+        Add-PnPFieldFromXml -List $TargetList -FieldXml $f.Xml | Out-Null
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 1. Lists
+# ---------------------------------------------------------------------------
+
+# 1a. Projects - requests can be linked to a project for cost tracking.
+$projects = Get-OrCreateList $ProjectsListTitle $ProjectsListUrl
+Set-PnPField -List $projects -Identity 'Title' -Values @{ Title = 'Project' } | Out-Null
+Add-MissingFields $projects @(
+    @{ Name = 'ProjectCode'; Xml = '<Field Type="Text" Name="ProjectCode" StaticName="ProjectCode" DisplayName="Project Code" MaxLength="50" EnforceUniqueValues="TRUE" Indexed="TRUE" />' }
+    @{ Name = 'ProjectManager'; Xml = '<Field Type="User" Name="ProjectManager" StaticName="ProjectManager" DisplayName="Project Manager" UserSelectionMode="PeopleOnly" />' }
+    @{ Name = 'Budget'; Xml = "<Field Type=`"Currency`" Name=`"Budget`" StaticName=`"Budget`" DisplayName=`"Budget`" Min=`"0`" Decimals=`"2`" LCID=`"$CurrencyLcid`" />" }
+    @{ Name = 'ProjectStatus'; Xml = '<Field Type="Choice" Name="ProjectStatus" StaticName="ProjectStatus" DisplayName="Project Status" Format="Dropdown" FillInChoice="FALSE"><Default>Active</Default><CHOICES><CHOICE>Active</CHOICE><CHOICE>On Hold</CHOICE><CHOICE>Closed</CHOICE></CHOICES></Field>' }
+)
+# Catch-all project so every request can be linked to something.
+if (-not (Get-PnPListItem -List $projects -PageSize 1 | Select-Object -First 1)) {
+    Add-PnPListItem -List $projects -Values @{ Title = 'GEN - General / Overhead'; ProjectCode = 'GEN' } | Out-Null
+}
+
+# 1b. Suppliers - Finance assigns one to each request so orders can be batched per supplier.
+$suppliers = Get-OrCreateList $SuppliersListTitle $SuppliersListUrl
+Set-PnPField -List $suppliers -Identity 'Title' -Values @{ Title = 'Supplier' } | Out-Null
+Add-MissingFields $suppliers @(
+    @{ Name = 'ContactName'; Xml = '<Field Type="Text" Name="ContactName" StaticName="ContactName" DisplayName="Contact Name" MaxLength="255" />' }
+    @{ Name = 'SupplierEmail'; Xml = '<Field Type="Text" Name="SupplierEmail" StaticName="SupplierEmail" DisplayName="Orders Email" MaxLength="255" />' }
+    @{ Name = 'Phone'; Xml = '<Field Type="Text" Name="Phone" StaticName="Phone" DisplayName="Phone" MaxLength="50" />' }
+    @{ Name = 'Website'; Xml = '<Field Type="Text" Name="Website" StaticName="Website" DisplayName="Website / Portal" MaxLength="255" />' }
+    @{ Name = 'PaymentTerms'; Xml = '<Field Type="Text" Name="PaymentTerms" StaticName="PaymentTerms" DisplayName="Payment Terms" MaxLength="100" />' }
+    @{ Name = 'SupplierNotes'; Xml = '<Field Type="Note" Name="SupplierNotes" StaticName="SupplierNotes" DisplayName="Notes" NumLines="4" RichText="FALSE" />' }
+    @{ Name = 'SupplierActive'; Xml = '<Field Type="Boolean" Name="SupplierActive" StaticName="SupplierActive" DisplayName="Active"><Default>1</Default></Field>' }
+)
+
+# 1c. Purchase Requests
+$list = Get-OrCreateList $ListTitle $ListUrl
+Set-PnPList -Identity $list -EnableAttachments $true | Out-Null
 Set-PnPField -List $list -Identity 'Title' -Values @{ Title = 'Item / Service Requested' } | Out-Null
 
 # ---------------------------------------------------------------------------
@@ -95,13 +146,15 @@ $statusChoices = @(
     'Rejected'
     'Approval Expired'
     'Cancelled'
+    'Merged'               # duplicate merged into another request (PR-06)
 )
 
 $fields = @(
     @{ Name = 'ItemDescription'; Xml = '<Field Type="Note" Name="ItemDescription" StaticName="ItemDescription" DisplayName="Description" NumLines="6" RichText="FALSE" Required="TRUE" />' }
     @{ Name = 'Quantity'; Xml = '<Field Type="Number" Name="Quantity" StaticName="Quantity" DisplayName="Quantity" Min="1" Decimals="0" Required="TRUE"><Default>1</Default></Field>' }
     @{ Name = 'EstimatedCost'; Xml = "<Field Type=`"Currency`" Name=`"EstimatedCost`" StaticName=`"EstimatedCost`" DisplayName=`"Estimated Total Cost`" Min=`"0`" Decimals=`"2`" LCID=`"$CurrencyLcid`" Required=`"TRUE`" />" }
-    @{ Name = 'Vendor'; Xml = '<Field Type="Text" Name="Vendor" StaticName="Vendor" DisplayName="Preferred Vendor / Link" MaxLength="255" />' }
+    @{ Name = 'Vendor'; Xml = '<Field Type="Text" Name="Vendor" StaticName="Vendor" DisplayName="Suggested Vendor / Link" MaxLength="255" />' }
+    @{ Name = 'Project'; Xml = "<Field Type=`"Lookup`" Name=`"Project`" StaticName=`"Project`" DisplayName=`"Project`" List=`"{$($projects.Id)}`" ShowField=`"Title`" />" }
     @{ Name = 'Justification'; Xml = '<Field Type="Note" Name="Justification" StaticName="Justification" DisplayName="Business Justification" NumLines="6" RichText="FALSE" Required="TRUE" />' }
     @{ Name = 'Department'; Xml = '<Field Type="Choice" Name="Department" StaticName="Department" DisplayName="Department" Format="Dropdown" FillInChoice="TRUE" Required="TRUE"><CHOICES><CHOICE>Administration</CHOICE><CHOICE>Finance</CHOICE><CHOICE>HR</CHOICE><CHOICE>IT</CHOICE><CHOICE>Marketing</CHOICE><CHOICE>Operations</CHOICE><CHOICE>Sales</CHOICE><CHOICE>Other</CHOICE></CHOICES></Field>' }
     @{ Name = 'NeededBy'; Xml = '<Field Type="DateTime" Name="NeededBy" StaticName="NeededBy" DisplayName="Needed By" Format="DateOnly" />' }
@@ -117,6 +170,17 @@ $fields = @(
     @{ Name = 'PONumber'; Xml = '<Field Type="Text" Name="PONumber" StaticName="PONumber" DisplayName="PO / Invoice Number" MaxLength="100" ShowInNewForm="FALSE" />' }
     @{ Name = 'ActualCost'; Xml = "<Field Type=`"Currency`" Name=`"ActualCost`" StaticName=`"ActualCost`" DisplayName=`"Actual Cost`" Min=`"0`" Decimals=`"2`" LCID=`"$CurrencyLcid`" ShowInNewForm=`"FALSE`" />" }
     @{ Name = 'FinanceNotes'; Xml = '<Field Type="Note" Name="FinanceNotes" StaticName="FinanceNotes" DisplayName="Finance Notes" NumLines="4" RichText="FALSE" ShowInNewForm="FALSE" />' }
+
+    # Finance picks the supplier; used to group and batch orders (PR-07).
+    @{ Name = 'Supplier'; Xml = "<Field Type=`"Lookup`" Name=`"Supplier`" StaticName=`"Supplier`" DisplayName=`"Supplier`" List=`"{$($suppliers.Id)}`" ShowField=`"Title`" ShowInNewForm=`"FALSE`" />" }
+
+    # --- Duplicate merge columns (Finance, PR-06) ---------------------------
+    @{ Name = 'MergeInto'; Xml = '<Field Type="Number" Name="MergeInto" StaticName="MergeInto" DisplayName="Merge Into Request #" Min="1" Decimals="0" ShowInNewForm="FALSE" />' }
+    @{ Name = 'MergeMode'; Xml = '<Field Type="Choice" Name="MergeMode" StaticName="MergeMode" DisplayName="Merge Mode" Format="Dropdown" FillInChoice="FALSE" ShowInNewForm="FALSE"><Default>Combine quantities and cost</Default><CHOICES><CHOICE>Combine quantities and cost</CHOICE><CHOICE>Exact duplicate - keep target unchanged</CHOICE></CHOICES></Field>' }
+    @{ Name = 'MergeState'; Xml = '<Field Type="Choice" Name="MergeState" StaticName="MergeState" DisplayName="Merge State" Format="Dropdown" FillInChoice="FALSE" ShowInNewForm="FALSE"><CHOICES><CHOICE>Awaiting Requester Approval</CHOICE><CHOICE>Merged</CHOICE><CHOICE>Declined</CHOICE><CHOICE>Invalid</CHOICE></CHOICES></Field>' }
+    @{ Name = 'MergedRequests'; Xml = '<Field Type="Note" Name="MergedRequests" StaticName="MergedRequests" DisplayName="Merged Requests" NumLines="3" RichText="FALSE" ShowInNewForm="FALSE" />' }
+    # Requesters of merged duplicates; the flows copy them on every update of the surviving request.
+    @{ Name = 'AdditionalRecipients'; Xml = '<Field Type="Note" Name="AdditionalRecipients" StaticName="AdditionalRecipients" DisplayName="Additional Recipients" NumLines="2" RichText="FALSE" ShowInNewForm="FALSE" ShowInEditForm="FALSE" />' }
 
     # --- Delivery tracking columns (Finance / Inventory) --------------------
     @{ Name = 'ExpectedDelivery'; Xml = '<Field Type="DateTime" Name="ExpectedDelivery" StaticName="ExpectedDelivery" DisplayName="Expected Delivery Date" Format="DateOnly" ShowInNewForm="FALSE" />' }
@@ -141,22 +205,19 @@ $fields = @(
     @{ Name = 'LastDelayNotice'; Xml = '<Field Type="Text" Name="LastDelayNotice" StaticName="LastDelayNotice" DisplayName="Last Delay Notice" MaxLength="100" ShowInNewForm="FALSE" ShowInEditForm="FALSE" />' }
 )
 
-foreach ($f in $fields) {
-    $existing = Get-PnPField -List $list -Identity $f.Name -ErrorAction SilentlyContinue
-    if ($existing) {
-        Write-Host "  Column '$($f.Name)' exists, skipping" -ForegroundColor DarkGray
-        continue
-    }
-    Write-Host "  Adding column '$($f.Name)'" -ForegroundColor Green
-    Add-PnPFieldFromXml -List $list -FieldXml $f.Xml | Out-Null
-}
+Add-MissingFields $list $fields
+
+# Existing lists: the requester's vendor column is now a suggestion; Finance sets Supplier.
+Set-PnPField -List $list -Identity 'Vendor' -Values @{ Title = 'Suggested Vendor / Link' } | Out-Null
 
 # Existing lists (created by an earlier version of this script): make sure the
 # Status column has every lifecycle choice.
 Set-PnPField -List $list -Identity 'RequestStatus' -Values @{ Choices = [string[]]$statusChoices } | Out-Null
 
 # Index the column used by every flow filter so queries stay fast past 5,000 items.
-Set-PnPField -List $list -Identity 'RequestStatus' -Values @{ Indexed = $true } | Out-Null
+foreach ($indexed in 'RequestStatus', 'Project', 'Supplier') {
+    Set-PnPField -List $list -Identity $indexed -Values @{ Indexed = $true } | Out-Null
+}
 
 # ---------------------------------------------------------------------------
 # 3. Views
@@ -165,12 +226,12 @@ $viewFieldsBase = @('ID', 'LinkTitle', 'Author', 'Department', 'EstimatedCost', 
 
 # Ordered but not yet fully received.
 $awaitingDeliveryCaml = '<In><FieldRef Name="RequestStatus" /><Values><Value Type="Choice">Purchased</Value><Value Type="Choice">In Transit</Value><Value Type="Choice">Delayed</Value><Value Type="Choice">Partially Received</Value></Values></In>'
-$deliveryViewFields = @('ID', 'LinkTitle', 'Author', 'RequestStatus', 'Vendor', 'PONumber', 'PurchasedOn', 'ExpectedDelivery', 'RevisedDelivery', 'DeliveryDue', 'Carrier', 'TrackingNumber')
+$deliveryViewFields = @('ID', 'LinkTitle', 'Author', 'RequestStatus', 'Supplier', 'PONumber', 'PurchasedOn', 'ExpectedDelivery', 'RevisedDelivery', 'DeliveryDue', 'Carrier', 'TrackingNumber')
 
 $views = @(
     @{
         Title  = 'My Requests'
-        Fields = @('ID', 'LinkTitle', 'EstimatedCost', 'RequestStatus', 'CEOComments', 'PurchasedOn', 'DeliveryDue', 'ReceivedOn', 'Created')
+        Fields = @('ID', 'LinkTitle', 'Project', 'EstimatedCost', 'RequestStatus', 'CEOComments', 'MergeInto', 'PurchasedOn', 'DeliveryDue', 'ReceivedOn', 'Created')
         Query  = '<Where><Eq><FieldRef Name="Author" /><Value Type="Integer"><UserID Type="Integer" /></Value></Eq></Where><OrderBy><FieldRef Name="ID" Ascending="FALSE" /></OrderBy>'
     }
     @{
@@ -180,7 +241,7 @@ $views = @(
     }
     @{
         Title  = 'Pending Purchase'
-        Fields = @('ID', 'LinkTitle', 'Author', 'Department', 'EstimatedCost', 'Vendor', 'Urgency', 'NeededBy', 'DecisionDate', 'ReminderCount', 'LastReminder')
+        Fields = @('ID', 'LinkTitle', 'Author', 'Project', 'Quantity', 'EstimatedCost', 'Supplier', 'Vendor', 'Urgency', 'NeededBy', 'DecisionDate', 'MergeState', 'ReminderCount')
         Query  = '<Where><Eq><FieldRef Name="RequestStatus" /><Value Type="Choice">Approved - Pending Purchase</Value></Eq></Where><OrderBy><FieldRef Name="DecisionDate" Ascending="TRUE" /></OrderBy>'
     }
     @{
@@ -199,8 +260,22 @@ $views = @(
         Query  = '<Where><Eq><FieldRef Name="RequestStatus" /><Value Type="Choice">Received</Value></Eq></Where><OrderBy><FieldRef Name="ReceivedOn" Ascending="FALSE" /></OrderBy>'
     }
     @{
+        # Finance: pick a supplier group, then batch-order it with PR-07.
+        Title        = 'Pending Purchase by Supplier'
+        Fields       = @('ID', 'LinkTitle', 'Quantity', 'EstimatedCost', 'Author', 'Project', 'Vendor', 'Urgency', 'NeededBy')
+        Query        = '<GroupBy Collapse="FALSE" GroupLimit="100"><FieldRef Name="Supplier" /></GroupBy><Where><Eq><FieldRef Name="RequestStatus" /><Value Type="Choice">Approved - Pending Purchase</Value></Eq></Where><OrderBy><FieldRef Name="Title" Ascending="TRUE" /></OrderBy>'
+        Aggregations = '<FieldRef Name="LinkTitle" Type="COUNT" /><FieldRef Name="EstimatedCost" Type="SUM" />'
+    }
+    @{
+        # Spend per project. Excludes rejected, expired, cancelled and merged requests.
+        Title        = 'By Project'
+        Fields       = @('ID', 'LinkTitle', 'Author', 'RequestStatus', 'Supplier', 'EstimatedCost', 'ActualCost', 'PurchasedOn')
+        Query        = '<GroupBy Collapse="TRUE" GroupLimit="100"><FieldRef Name="Project" /></GroupBy><Where><In><FieldRef Name="RequestStatus" /><Values><Value Type="Choice">Pending CEO Approval</Value><Value Type="Choice">Approved - Pending Purchase</Value><Value Type="Choice">Purchased</Value><Value Type="Choice">In Transit</Value><Value Type="Choice">Delayed</Value><Value Type="Choice">Partially Received</Value><Value Type="Choice">Received</Value></Values></In></Where><OrderBy><FieldRef Name="ID" Ascending="FALSE" /></OrderBy>'
+        Aggregations = '<FieldRef Name="EstimatedCost" Type="SUM" /><FieldRef Name="ActualCost" Type="SUM" />'
+    }
+    @{
         Title  = 'All Requests'
-        Fields = $viewFieldsBase + @('DecisionDate', 'PurchasedOn', 'DeliveryDue', 'ReceivedOn')
+        Fields = $viewFieldsBase + @('Project', 'Supplier', 'DecisionDate', 'PurchasedOn', 'DeliveryDue', 'ReceivedOn')
         Query  = '<OrderBy><FieldRef Name="ID" Ascending="FALSE" /></OrderBy>'
     }
 )
@@ -213,7 +288,9 @@ foreach ($v in $views) {
         continue
     }
     Write-Host "  Adding view '$($v.Title)'" -ForegroundColor Green
-    Add-PnPView -List $list -Title $v.Title -Fields $v.Fields -Query $v.Query -Paged -RowLimit 100 | Out-Null
+    $viewArgs = @{ List = $list; Title = $v.Title; Fields = $v.Fields; Query = $v.Query; Paged = $true; RowLimit = 100 }
+    if ($v.Aggregations) { $viewArgs.Aggregations = $v.Aggregations }
+    Add-PnPView @viewArgs | Out-Null
 }
 
 # Make "My Requests" the default so requesters land on their own items.
@@ -257,10 +334,22 @@ foreach ($g in $RequesterGroups) {
 # 4d. Item-level security: requesters only see and touch their own items.
 Set-PnPList -Identity $list -ReadSecurity 2 -WriteSecurity 2 | Out-Null
 
+# 4e. Projects and Suppliers: everyone reads (to pick a project), managers maintain.
+foreach ($lookupList in $projects, $suppliers) {
+    Set-PnPList -Identity $lookupList -BreakRoleInheritance -CopyRoleAssignments:$false | Out-Null
+    Set-PnPListPermission -Identity $lookupList -Group $ownersGroup -AddRole 'Full Control'
+    Set-PnPListPermission -Identity $lookupList -Group $ManagersGroupName -AddRole 'Edit'
+    foreach ($g in $RequesterGroups) {
+        Set-PnPListPermission -Identity $lookupList -Group $g -AddRole 'Read'
+    }
+}
+
 $web = Get-PnPWeb
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
 Write-Host "List URL : $($web.Url.TrimEnd('/'))/$ListUrl"
+Write-Host "Projects : $($web.Url.TrimEnd('/'))/$ProjectsListUrl"
+Write-Host "Suppliers: $($web.Url.TrimEnd('/'))/$SuppliersListUrl"
 Write-Host "Managers : $ManagersGroupName ($((@($CeoEmail) + $FinanceEmails + $InventoryEmails) -join ', '))"
 Write-Host "Requesters: $($RequesterGroups -join ', ') (role '$SubmitRoleName')"
 Write-Host ""

@@ -76,7 +76,7 @@ On: `@{triggerOutputs()?['body/RequestStatus/Value']}`
 | Field | Value |
 |---|---|
 | To | `@{triggerOutputs()?['body/Author/Email']}` |
-| CC | `FinanceEmail` variable |
+| CC | `@{variables('FinanceEmail')};@{triggerOutputs()?['body/AdditionalRecipients']}` (adds requesters of merged duplicates) |
 | Subject | `Arrived: your request #@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}` |
 | Body | *(code view)* |
 
@@ -110,7 +110,7 @@ Please contact the inventory team to collect it.</p>
 | Field | Value |
 |---|---|
 | To | `@{triggerOutputs()?['body/Author/Email']}` |
-| CC | `FinanceEmail` variable |
+| CC | `@{variables('FinanceEmail')};@{triggerOutputs()?['body/AdditionalRecipients']}` |
 | Subject | `Delayed: your order #@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}` |
 | Body | *(code view)* |
 

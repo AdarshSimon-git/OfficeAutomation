@@ -91,7 +91,7 @@ Map (key/value mode), with each value as an **expression**:
 | `Link` | `item()?['{Link}']` |
 | `Status` | `item()?['RequestStatus']?['Value']` |
 | `Requester` | `coalesce(item()?['Author']?['DisplayName'], '')` |
-| `Vendor` | `coalesce(item()?['Vendor'], '')` |
+| `Vendor` | `coalesce(item()?['Supplier']?['Value'], item()?['Vendor'], '')` |
 | `PO` | `coalesce(item()?['PONumber'], '')` |
 | `Tracking` | `trim(concat(coalesce(item()?['Carrier'], ''), ' ', coalesce(item()?['TrackingNumber'], '')))` |
 | `Ordered` | `formatDateTime(convertFromUtc(coalesce(item()?['PurchasedOn'], item()?['Modified']), variables('TimeZone')), 'dd MMM')` |
@@ -155,7 +155,7 @@ concat(
 <span style="background:#fff4ce">&nbsp;Amber&nbsp;</span> = due within @{variables('DueSoonDays')} days or no expected date.</p>
 <table cellpadding="6" style="border-collapse:collapse;border:1px solid #ccc;font-family:Segoe UI,Arial,sans-serif;font-size:13px">
   <tr style="background:#f3f2f1;text-align:left">
-    <th>Request</th><th>Status</th><th>Requester</th><th>Vendor / PO</th><th>Ordered</th><th>Due</th><th>Timing</th><th>Carrier / tracking</th>
+    <th>Request</th><th>Status</th><th>Requester</th><th>Supplier / PO</th><th>Ordered</th><th>Due</th><th>Timing</th><th>Carrier / tracking</th>
   </tr>
   @{join(body('Delivery_Rows'), '')}
 </table>

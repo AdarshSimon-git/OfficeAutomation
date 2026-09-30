@@ -43,6 +43,21 @@ switch to the real ones.
 | 15 | Set **Received** with Quantity Received less than Quantity | Requester gets *Arrived* with "(short delivery)"; Finance copied; *Received On/By* filled; *Received Notified* = Yes; PR-04 ran once |
 | 16 | Run PR-05 again | The received order is no longer listed |
 | 17 | Set a request **Cancelled** | It stops appearing in all reminders |
+| **Projects** | | |
+| 18 | Create project *PRJ-T Test* with Budget 1,000. Submit a request for it costing 800, get it approved, then submit another for 300 | The second approval shows committed 800, remaining −100 and ⚠️ Over budget (with the budget check) |
+| 19 | Set the project to *Closed* and submit another request for it | Approval shows ⚠️ Project is Closed |
+| 20 | Open the **By Project** view | Requests grouped under *PRJ-T Test* with Sum totals |
+| **Merge duplicates** | | |
+| 21 | Two members (A and B) each submit "Test laptop bag", qty 1 and 2; both approved | Two requests in *Pending Purchase* |
+| 22 | As Finance, on B's request set **Merge Into** = A's ID and save | B's *Merge State* = Awaiting Requester Approval; **both A and B** get a merge approval |
+| 23 | A and B both approve | A's request: qty 3, estimate summed, *Merged Requests* lists B's; B's request: Status **Merged**; confirmation email to A, B and Finance |
+| 24 | Mark A's request Purchased, then Received | **B is copied** on the Ordered and Arrived emails |
+| 25 | Try merging into a non-existent ID, or into a request still Pending CEO Approval | *Merge State* = Invalid; *Merge Into* cleared; Finance emailed the reason; no approval sent |
+| 26 | Propose a merge and have one requester reject | *Merge State* = Declined; both requests unchanged |
+| **Supplier batching** | | |
+| 27 | Create supplier *Test Supplier* (Orders Email = your address). Assign it to 3 approved requests using bulk edit | The 3 appear under *Test Supplier* in **Pending Purchase by Supplier**, with count 3 and summed cost |
+| 28 | Select one → **Automate → Order all from this supplier**: PO `TEST-001`, mark purchased = Yes, email supplier = Yes | Supplier email (items and quantities only); batch summary to you; all 3 now **Purchased** with PO TEST-001; PR-02 ran 3 times (3 requester emails) |
+| 29 | Run it on a request with no Supplier | Email "set a Supplier first"; nothing changed |
 
 ## Monitoring
 
@@ -69,6 +84,9 @@ switch to the real ones.
 | PR-04 sends a delay email on every save | Its trigger condition is missing, or *Stamp Delay Notice* isn't writing *Last Delay Notice*. |
 | An order shows as late on its due day | `TimeZone` in PR-05 is wrong: use the Windows ID, e.g. `India Standard Time`. |
 | Overdue Deliveries view is empty but the digest shows late orders | The view compares *Delivery Due* with today's date. Check the order has an Expected or Revised date. |
+| PR-06 or PR-07 *Get items* fails on `ProjectId` / `SupplierId` | Use `Project/Id eq …` / `Supplier/Id eq …` instead. The column's internal name must be exactly `Project` / `Supplier`. |
+| "Order all from this supplier" isn't in the Automate menu | The user isn't a run-only user of PR-07, or the browser cached the menu: refresh. The flow must use the *For a selected item* trigger on this list. |
+| Merge approval never arrives | PR-06's trigger condition is too strict: check *Merge State* is blank on the request (no default value on that column). |
 | *Received By* isn't filled in | Check the claims expression in PR-04 (`i:0#.f|membership|` + email), and that the flow account can resolve users on the site. |
 | A request was set back from Purchased and purchased again, but no email | *Completion Notified* is still Yes: set it to No in grid view (or unhide it) before marking Purchased again. The same applies to *Received Notified* for Received. |
 | Approval expired | The CEO didn't respond within 28 days. Resubmit. Consider adding a delegate: use *Approve/Reject – First to respond* with the CEO and an EA/COO separated by `;`. |

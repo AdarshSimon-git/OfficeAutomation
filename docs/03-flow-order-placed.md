@@ -23,8 +23,8 @@ When an item is created or modified   (trigger condition: Status = Purchased AND
 └─ Send an email        Email Inventory Incoming
 ```
 
-When marking a request *Purchased*, Finance should also fill in **Expected
-Delivery Date** and, if known, **Carrier / Courier** and **Tracking Number /
+When marking a request *Purchased*, Finance should also set the **Supplier**
+and fill in **Expected Delivery Date** and, if known, **Carrier / Courier** and **Tracking Number /
 Link**. The inventory manager can add or correct these later.
 
 ## Build it
@@ -67,6 +67,7 @@ This update triggers the flow again, but the trigger condition is now false
 | Field | Value |
 |---|---|
 | To | `@{triggerOutputs()?['body/Author/Email']}` |
+| CC | `@{triggerOutputs()?['body/AdditionalRecipients']}` (requesters whose duplicate requests were merged into this one, see [10](10-flow-merge-duplicates.md); empty is fine) |
 | Subject | `Ordered: your request #@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}` |
 | Body | *(code view)* |
 
@@ -75,6 +76,7 @@ This update triggers the flow again, but the trigger condition is now false
 <p>Finance has placed the order for your request <b>#@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}</b>.
 You'll get another email when it arrives at the office.</p>
 <table cellpadding="6" style="border-collapse:collapse;border:1px solid #ccc">
+  <tr><td><b>Supplier</b></td><td>@{coalesce(triggerOutputs()?['body/Supplier/Value'], triggerOutputs()?['body/Vendor'])}</td></tr>
   <tr><td><b>PO / invoice number</b></td><td>@{triggerOutputs()?['body/PONumber']}</td></tr>
   <tr><td><b>Expected delivery</b></td><td>@{if(empty(triggerOutputs()?['body/ExpectedDelivery']), 'To be confirmed', formatDateTime(coalesce(triggerOutputs()?['body/ExpectedDelivery'], utcNow()), 'dd MMM yyyy'))}</td></tr>
   <tr><td><b>Ordered by</b></td><td>@{triggerOutputs()?['body/Editor/DisplayName']}</td></tr>
@@ -97,7 +99,8 @@ You'll get another email when it arrives at the office.</p>
   <tr><td><b>Request</b></td><td>#@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}</td></tr>
   <tr><td><b>Quantity</b></td><td>@{triggerOutputs()?['body/Quantity']}</td></tr>
   <tr><td><b>Requested by</b></td><td>@{triggerOutputs()?['body/Author/DisplayName']} (@{triggerOutputs()?['body/Department/Value']})</td></tr>
-  <tr><td><b>Vendor</b></td><td>@{triggerOutputs()?['body/Vendor']}</td></tr>
+  <tr><td><b>Project</b></td><td>@{coalesce(triggerOutputs()?['body/Project/Value'], '–')}</td></tr>
+  <tr><td><b>Supplier</b></td><td>@{coalesce(triggerOutputs()?['body/Supplier/Value'], triggerOutputs()?['body/Vendor'])}</td></tr>
   <tr><td><b>PO / invoice number</b></td><td>@{triggerOutputs()?['body/PONumber']}</td></tr>
   <tr><td><b>Expected delivery</b></td><td>@{if(empty(triggerOutputs()?['body/ExpectedDelivery']), 'Not provided – please confirm with Finance / vendor', formatDateTime(coalesce(triggerOutputs()?['body/ExpectedDelivery'], utcNow()), 'dd MMM yyyy'))}</td></tr>
   <tr><td><b>Carrier</b></td><td>@{triggerOutputs()?['body/Carrier']}</td></tr>
@@ -107,6 +110,10 @@ You'll get another email when it arrives at the office.</p>
 (with a revised date and reason). When it arrives, set <b>Status = Received</b> and fill in the quantity received.</p>
 <p><a href="@{triggerOutputs()?['body/{Link}']}">Open the request</a></p>
 ```
+
+For several requests from the same supplier, Finance can mark them all
+*Purchased* in one go with PR-07 ([11](11-flow-supplier-batch-order.md)).
+This flow then runs once per request.
 
 ## Optional additions
 

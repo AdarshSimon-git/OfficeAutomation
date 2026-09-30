@@ -72,6 +72,8 @@ it as is: the `@{...}` expressions are evaluated when pasted into the field.
 
 **Item / service:** @{triggerOutputs()?['body/Title']}
 
+**Project:** @{coalesce(triggerOutputs()?['body/Project/Value'], 'Not specified')}
+
 **Quantity:** @{triggerOutputs()?['body/Quantity']}
 
 **Estimated total cost:** @{triggerOutputs()?['body/EstimatedCost']}
@@ -80,7 +82,7 @@ it as is: the `@{...}` expressions are evaluated when pasted into the field.
 
 **Needed by:** @{if(empty(triggerOutputs()?['body/NeededBy']), 'Not specified', formatDateTime(coalesce(triggerOutputs()?['body/NeededBy'], utcNow()), 'dd MMM yyyy'))}
 
-**Preferred vendor:** @{triggerOutputs()?['body/Vendor']}
+**Suggested vendor:** @{triggerOutputs()?['body/Vendor']}
 
 **Description:**
 @{triggerOutputs()?['body/ItemDescription']}
@@ -88,6 +90,10 @@ it as is: the `@{...}` expressions are evaluated when pasted into the field.
 **Business justification:**
 @{triggerOutputs()?['body/Justification']}
 ```
+
+> **Optional budget check:** to show the CEO the project's budget, committed
+> spend and remaining budget in this approval, add the steps in
+> [09 – Projects](09-projects.md#optional-budget-check-in-the-ceo-approval-pr-01).
 
 **Settings** (`…` → *Settings*) → **Timeout**: `P28D`.
 Flow runs have a hard 30-day limit, so the timeout makes the flow end
@@ -126,9 +132,10 @@ open the request, click <b>Edit</b> and set <b>Status = Purchased</b> (add the P
 <table cellpadding="6" style="border-collapse:collapse;border:1px solid #ccc">
   <tr><td><b>Request</b></td><td>#@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}</td></tr>
   <tr><td><b>Requested by</b></td><td>@{triggerOutputs()?['body/Author/DisplayName']} (@{triggerOutputs()?['body/Department/Value']})</td></tr>
+  <tr><td><b>Project</b></td><td>@{coalesce(triggerOutputs()?['body/Project/Value'], 'Not specified')}</td></tr>
   <tr><td><b>Quantity</b></td><td>@{triggerOutputs()?['body/Quantity']}</td></tr>
   <tr><td><b>Estimated cost</b></td><td>@{triggerOutputs()?['body/EstimatedCost']}</td></tr>
-  <tr><td><b>Preferred vendor</b></td><td>@{triggerOutputs()?['body/Vendor']}</td></tr>
+  <tr><td><b>Suggested vendor</b></td><td>@{triggerOutputs()?['body/Vendor']}</td></tr>
   <tr><td><b>Needed by</b></td><td>@{if(empty(triggerOutputs()?['body/NeededBy']), 'Not specified', formatDateTime(coalesce(triggerOutputs()?['body/NeededBy'], utcNow()), 'dd MMM yyyy'))}</td></tr>
   <tr><td><b>Urgency</b></td><td>@{triggerOutputs()?['body/Urgency/Value']}</td></tr>
   <tr><td><b>CEO comments</b></td><td>@{outputs('CEO_Approval')?['body/responses']?[0]?['comments']}</td></tr>

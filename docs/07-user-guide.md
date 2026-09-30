@@ -10,13 +10,21 @@ Share this page (or copy it into your intranet) when you roll out the process.
    * **Item / Service Requested**: a short name, e.g. *"Dell 27" monitor"*
    * **Description**, **Quantity**, **Estimated Total Cost**
    * **Business Justification**: why it's needed
-   * **Department**, **Urgency**, **Needed By**, **Preferred Vendor / Link**
+   * **Project**: the project this is for (use **GEN - General / Overhead**
+     if it isn't for a specific project)
+   * **Department**, **Urgency**, **Needed By**, **Suggested Vendor / Link**
    * Attach any quotes or screenshots with **Add attachments**
 3. Click **Save**. You'll get emails when the CEO decides, when Finance
    places the order, if the delivery is delayed, and when it arrives at the
    office.
 4. To check progress at any time, open the list. The **My Requests** view
    shows the *Status* of each of your requests.
+
+**If Finance finds a duplicate** (e.g. a colleague asked for the same
+thing), you may get an approval request asking to **merge** your request
+into another one. If you approve, your request is closed as *Merged* and you
+get all further updates (ordered, delayed, received) for the combined one.
+If you reject, nothing changes.
 
 You can't edit a request after submitting it. If something needs to
 change, ask Finance to set it to **Cancelled**, then submit a new one.
@@ -26,6 +34,9 @@ change, ask Finance to set it to **Cancelled**, then submit a new one.
 * Each new request arrives as an **approval email** in Outlook with
   **Approve / Reject** buttons and a comments box. It also appears in the
   **Approvals** app in Teams and the Power Automate mobile app.
+* The approval shows the **project**, and, if the budget check is set
+  up, the project's budget, what's already committed and what would remain,
+  with a ⚠️ if it would go over budget or the project is closed.
 * Your comments are saved on the request and sent to the requester (and to
   Finance, for approvals).
 * If you haven't responded after 2 days, you'll get a reminder listing all
@@ -34,6 +45,25 @@ change, ask Finance to set it to **Cancelled**, then submit a new one.
   been waiting 5 days or more.
 
 ## Finance: placing the order
+
+**Assign a supplier.** Set **Supplier** on each approved request (pick from
+the *Suppliers* list; add new suppliers there). In the **Pending Purchase
+by Supplier** view you can select several unassigned requests → **Edit** →
+set Supplier for all of them at once.
+
+**Merge duplicates** before ordering: on the request to close, set **Merge
+Into Request #** to the number of the request to keep, choose a **Merge
+Mode**, and save. The requester(s) are asked to approve. *Merge State* shows
+progress. Details: [10 – Merge duplicates](10-flow-merge-duplicates.md).
+
+**Order several items from one supplier at once:** in *Pending Purchase by
+Supplier*, select any request in the supplier's group → **Automate → Order
+all from this supplier** → enter the PO number and expected date. This
+emails you the consolidated order (and optionally the supplier) and can
+mark every item *Purchased* in one go. Details:
+[11 – Supplier batch order](11-flow-supplier-batch-order.md).
+
+**Or order one request at a time:**
 
 1. Approved requests arrive by email (subject *"Action needed: approved
    purchase #…"*) and appear in the **Pending Purchase** view, oldest first.
