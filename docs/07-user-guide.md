@@ -12,8 +12,9 @@ Share this page (or copy it into your intranet) when you roll out the process.
    * **Business Justification**: why it's needed
    * **Department**, **Urgency**, **Needed By**, **Preferred Vendor / Link**
    * Attach any quotes or screenshots with **Add attachments**
-3. Click **Save**. You'll get emails when the CEO decides and when Finance
-   completes the purchase.
+3. Click **Save**. You'll get emails when the CEO decides, when Finance
+   places the order, if the delivery is delayed, and when it arrives at the
+   office.
 4. To check progress at any time, open the list. The **My Requests** view
    shows the *Status* of each of your requests.
 
@@ -32,7 +33,7 @@ change, ask Finance to set it to **Cancelled**, then submit a new one.
 * You're copied on the Finance reminder whenever an approved purchase has
   been waiting 5 days or more.
 
-## Finance: making the purchase and marking it done
+## Finance: placing the order
 
 1. Approved requests arrive by email (subject *"Action needed: approved
    purchase #…"*) and appear in the **Pending Purchase** view, oldest first.
@@ -41,13 +42,44 @@ change, ask Finance to set it to **Cancelled**, then submit a new one.
    *Pending Purchase* view to update several at once) and set:
    * **Status** → **Purchased**
    * **PO / Invoice Number**, **Actual Cost**, optional **Finance Notes**
+   * **Expected Delivery Date** (important: delivery tracking uses it)
+   * **Carrier / Courier** and **Tracking Number / Link**, if you have them
    * **Purchased On** (leave it blank to use today's date)
-   * Attach the invoice or receipt
-4. **Save.** The requester is emailed automatically and the request drops
-   off the reminder list.
+   * Attach the PO or invoice
+4. **Save.** The requester and the inventory manager are emailed
+   automatically, and the request drops off your reminder list.
 
 Until then, a **reminder digest arrives every weekday at 9:00** listing all
 open purchases and how long each has been waiting. Requests waiting 5 days
 or more are highlighted, and the CEO is copied.
 
 To withdraw a request, set **Status → Cancelled**. This stops the reminders.
+
+Finance is also copied when an order arrives (to match the invoice), when
+it's delayed, and when an order is 3 or more days late (to chase the vendor).
+
+## Inventory manager: tracking deliveries and marking them received
+
+Each time Finance places an order, you get an **"Incoming order"** email.
+Every weekday at 8:45 you also get a **Delivery tracker** email listing all
+open orders, most late first: 🔴 past due, 🟡 due in the next 2 days or
+missing an expected date.
+
+In the list, use the **Awaiting Delivery** view (all open orders, by due
+date) and **Overdue Deliveries** (past due only). Open a request →
+**Edit** and update it as the order progresses:
+
+| When | Set |
+|---|---|
+| Vendor confirms dispatch | **Status = In Transit**; **Carrier / Courier**; **Tracking Number / Link**; **Revised Delivery Date** if the ETA changed |
+| It's running late | **Status = Delayed**; **Revised Delivery Date**; **Delay Reason**. The requester and Finance are emailed. Each later change to the revised date sends one new update. |
+| Part of it arrives | **Status = Partially Received**; **Quantity Received** so far |
+| Everything arrives | **Status = Received**; **Quantity Received**; **Receipt Notes / Condition** (any damage); attach a photo of the delivery note. *Received On* and *Received By* fill in automatically if left blank. The requester is told to collect it. |
+
+At each step, add a line to **Delivery Updates** (e.g. *"Called vendor,
+shipped from warehouse today"*). Every entry is kept with the date and your
+name, giving a full tracking history.
+
+Orders that pass their due date while still *Purchased* or *In Transit* are
+set to **Delayed** automatically, and the requester is told. When you get a
+new date from the vendor, set the **Revised Delivery Date**.

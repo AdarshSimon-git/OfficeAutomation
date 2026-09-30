@@ -99,7 +99,7 @@ concat(
   '<td>', coalesce(item()?['Department']?['Value'], ''), '</td>',
   '<td style="text-align:right">', formatNumber(float(coalesce(item()?['EstimatedCost'], 0)), 'N2'), '</td>',
   '<td>', coalesce(item()?['Urgency']?['Value'], ''), '</td>',
-  '<td>', if(empty(item()?['NeededBy']), '–', formatDateTime(item()?['NeededBy'], 'dd MMM yyyy')), '</td>',
+  '<td>', if(empty(item()?['NeededBy']), '–', formatDateTime(coalesce(item()?['NeededBy'], utcNow()), 'dd MMM yyyy')), '</td>',
   '<td>', formatDateTime(coalesce(item()?['DecisionDate'], item()?['Created']), 'dd MMM yyyy'), '</td>',
   '<td style="text-align:right"><b>', string(div(sub(ticks(utcNow()), ticks(coalesce(item()?['DecisionDate'], item()?['Created']))), 864000000000)), '</b></td>',
   '<td style="text-align:right">', string(coalesce(item()?['ReminderCount'], 0)), '</td>',
@@ -124,7 +124,7 @@ concat(
 <p>These purchase requests have been <b>approved by the CEO</b> and are waiting to be purchased.
 Rows highlighted in red have waited <b>@{variables('EscalateAfterDays')} days or more</b>.</p>
 <p>When a purchase is done, open the request → <b>Edit</b> → set <b>Status = Purchased</b> and fill in the
-PO / invoice number and actual cost. It will then drop off this list.</p>
+PO / invoice number, actual cost and <b>expected delivery date</b>. It will then drop off this list and move to the inventory delivery tracker.</p>
 <table cellpadding="6" style="border-collapse:collapse;border:1px solid #ccc;font-family:Segoe UI,Arial,sans-serif;font-size:13px">
   <tr style="background:#f3f2f1;text-align:left">
     <th>Request</th><th>Requester</th><th>Dept</th><th>Est. cost</th><th>Urgency</th>
@@ -146,8 +146,8 @@ PO / invoice number and actual cost. It will then drop off this list.</p>
   * Reminders Sent: `@{add(coalesce(items('Record_Reminder')?['ReminderCount'], 0), 1)}`
   * Last Reminder: `@{utcNow()}`
 
-  These updates don't trigger PR-02, because its trigger condition requires
-  *Status = Purchased*.
+  These updates don't trigger PR-02 or PR-04, because their trigger conditions require
+  *Status = Purchased*, *Received* or *Delayed*.
 
 ---
 

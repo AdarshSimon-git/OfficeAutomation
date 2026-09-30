@@ -50,6 +50,7 @@ mailbox is best, so the flow doesn't need editing when staff change).
 | Status Value | `Pending CEO Approval` |
 | Reminders Sent | `0` |
 | Completion Notified | `No` |
+| Received Notified | `No` |
 
 ### 5. Approvals *Start and wait for an approval* – rename to **CEO Approval**
 
@@ -77,7 +78,7 @@ it as is: the `@{...}` expressions are evaluated when pasted into the field.
 
 **Urgency:** @{triggerOutputs()?['body/Urgency/Value']}
 
-**Needed by:** @{if(empty(triggerOutputs()?['body/NeededBy']), 'Not specified', formatDateTime(triggerOutputs()?['body/NeededBy'], 'dd MMM yyyy'))}
+**Needed by:** @{if(empty(triggerOutputs()?['body/NeededBy']), 'Not specified', formatDateTime(coalesce(triggerOutputs()?['body/NeededBy'], utcNow()), 'dd MMM yyyy'))}
 
 **Preferred vendor:** @{triggerOutputs()?['body/Vendor']}
 
@@ -121,14 +122,14 @@ the CEO long before that.
 ```html
 <p>Hello Finance team,</p>
 <p>The CEO has <b>approved</b> the following purchase request. Please make the purchase and then
-open the request, click <b>Edit</b> and set <b>Status = Purchased</b> (add the PO / invoice number and actual cost).</p>
+open the request, click <b>Edit</b> and set <b>Status = Purchased</b> (add the PO / invoice number, actual cost and expected delivery date).</p>
 <table cellpadding="6" style="border-collapse:collapse;border:1px solid #ccc">
   <tr><td><b>Request</b></td><td>#@{triggerOutputs()?['body/ID']} – @{triggerOutputs()?['body/Title']}</td></tr>
   <tr><td><b>Requested by</b></td><td>@{triggerOutputs()?['body/Author/DisplayName']} (@{triggerOutputs()?['body/Department/Value']})</td></tr>
   <tr><td><b>Quantity</b></td><td>@{triggerOutputs()?['body/Quantity']}</td></tr>
   <tr><td><b>Estimated cost</b></td><td>@{triggerOutputs()?['body/EstimatedCost']}</td></tr>
   <tr><td><b>Preferred vendor</b></td><td>@{triggerOutputs()?['body/Vendor']}</td></tr>
-  <tr><td><b>Needed by</b></td><td>@{if(empty(triggerOutputs()?['body/NeededBy']), 'Not specified', formatDateTime(triggerOutputs()?['body/NeededBy'], 'dd MMM yyyy'))}</td></tr>
+  <tr><td><b>Needed by</b></td><td>@{if(empty(triggerOutputs()?['body/NeededBy']), 'Not specified', formatDateTime(coalesce(triggerOutputs()?['body/NeededBy'], utcNow()), 'dd MMM yyyy'))}</td></tr>
   <tr><td><b>Urgency</b></td><td>@{triggerOutputs()?['body/Urgency/Value']}</td></tr>
   <tr><td><b>CEO comments</b></td><td>@{outputs('CEO_Approval')?['body/responses']?[0]?['comments']}</td></tr>
 </table>
